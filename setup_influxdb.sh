@@ -34,6 +34,16 @@ function debian_install {
     else
         service influxdb start
     fi
+
+    if [ -e telegraf_1.2.1_amd64.deb ]; then
+        echo "Telegraph Already Downloaded. Skipping Download."
+    else
+        echo "Downloading Telegraph..."
+        wget https://dl.influxdata.com/telegraf/releases/telegraf_1.2.1_amd64.deb
+    fi
+
+    echo "Installing Telegraph"
+    dpkg -i telegraf_1.2.1_amd64.deb
 }
 
 function redhat_install {
@@ -53,7 +63,16 @@ function redhat_install {
     else
         service influxdb start
     fi
-    
+
+    if [ -e telegraf-1.2.1.x86_64.rpm ]; then
+        echo "Telegraph already Downloaded. Skipping Download."
+    else
+        echo "Downloading Telegraph..."
+        wget https://dl.influxdata.com/telegraf/releases/telegraf-1.2.1.x86_64.rpm
+    fi
+
+    echo "Installing Telegraph"
+    yum localinstall telegraf-1.2.1.x86_64.rpm -y
 }
 
 if [ -f /etc/debian_version ]; then
@@ -66,6 +85,13 @@ else
     echo "UNSUPPORTED DISTRIBUTION! This is something else"
     exit 1
 fi
+
+echo "Configuring InfluxDB"
+curl -XPOST 'http://localhost:8086/query' --data-urlencode "q=CREATE DATABASE mydb"
+echo
+echo "Configuring Telegraf"
+telegraf config > telegraf.conf
+telegraf --config telegraf.conf -input-filter cpu:mem -output-filter influxdb &
 
 echo
 echo "Report Bugs at https://github.com/abhijitnavale/influxdb_automation"
