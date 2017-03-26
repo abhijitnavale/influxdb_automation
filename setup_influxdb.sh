@@ -18,17 +18,42 @@ echo "Setting up InfluxDB, Telegraph and Graphana On This Computer"
 echo
 
 function debian_install {
-    echo "Downloading Debian Package"
-    wget https://dl.influxdata.com/influxdb/releases/influxdb_1.2.2_amd64.deb
-    sudo dpkg -i influxdb_1.2.2_amd64.deb
+    if [ -e influxdb_1.2.2_amd64.deb ]; then
+        echo "InfluxDB Already Downloaded. Skipping new Download."
+    else
+        echo "Downloading Debian Package"
+        wget https://dl.influxdata.com/influxdb/releases/influxdb_1.2.2_amd64.deb
+    fi
+
+    echo "Installing InfluxDB Package..."
+    dpkg -i influxdb_1.2.2_amd64.deb
+
+    echo "Starting InfluxDB Service..."
+    if [[ `systemctl` =~ -\.mount ]]; then
+        systemctl start influxdb
+    else
+        service influxdb start
+    fi
 }
 
 function redhat_install {
-    echo "Downloading RPM Package"
-    wget https://dl.influxdata.com/influxdb/releases/influxdb-1.2.2.x86_64.rpm
-    echo "Installing InfludDB Package..."
-    sudo yum localinstall influxdb-1.2.2.x86_64.rpm
-    echo "Complete: InfluxDB"
+    if [ -e influxdb-1.2.2.x86_64.rpm ]; then
+        echo "InfluxDB Already Downloaded. Skipping new Download."
+    else
+        echo "Downloading InfluxDB Package"
+        wget https://dl.influxdata.com/influxdb/releases/influxdb-1.2.2.x86_64.rpm
+    fi
+    
+    echo "Installing InfluxdDB Package..."
+    yum localinstall influxdb-1.2.2.x86_64.rpm -y
+    
+    echo "Starting InfluxDB Service..."
+    if [[ `systemctl` =~ -\.mount ]]; then
+        systemctl start influxdb
+    else
+        service influxdb start
+    fi
+    
 }
 
 if [ -f /etc/debian_version ]; then
@@ -36,7 +61,7 @@ if [ -f /etc/debian_version ]; then
     debian_install
 elif [ -f /etc/redhat-release ]; then
     echo "Redhat Family Distrubition Found"
-    #redhat_install
+    redhat_install
 else
     echo "UNSUPPORTED DISTRIBUTION! This is something else"
     exit 1
